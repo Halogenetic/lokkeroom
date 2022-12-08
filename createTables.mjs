@@ -20,8 +20,8 @@ app.use(bodyParser.json());
   CREATE SEQUENCE users_seq;
   CREATE TABLE users (
     id SERIAL,
-    email VARCHAR(25) NULL,
-    password VARCHAR(10) NULL,
+    email VARCHAR(25) NOT NULL,
+    password VARCHAR(100) NOT NULL,
     PRIMARY KEY (id)
   );
     
@@ -29,9 +29,9 @@ app.use(bodyParser.json());
   CREATE SEQUENCE messages_seq;
   CREATE TABLE messages (
     id SERIAL,
-    id_users INTEGER NULL,
-    id_lobbies INTEGER NULL,
-    content VARCHAR(1) NULL,
+    id_users INTEGER NOT NULL,
+    id_lobbies INTEGER NOT NULL,
+    content VARCHAR(1000) NOT NULL,
     PRIMARY KEY (id)
   );
   
@@ -39,7 +39,7 @@ app.use(bodyParser.json());
   CREATE SEQUENCE lobbies_seq;
   CREATE TABLE lobbies (
     id SERIAL,
-    id_users INTEGER NULL,
+    id_users INTEGER NOT NULL,
     PRIMARY KEY (id)
   );
   
@@ -47,8 +47,8 @@ app.use(bodyParser.json());
   CREATE SEQUENCE users_per_lobby_seq;
   CREATE TABLE users_per_lobby (
     id SERIAL,
-    id_users INTEGER NULL,
-    id_lobbies INTEGER NULL,
+    id_users INTEGER NOT NULL,
+    id_lobbies INTEGER NOT NULL,
     PRIMARY KEY (id)
   );
   
@@ -63,8 +63,8 @@ app.use(bodyParser.json());
   CREATE SEQUENCE users_per_team_seq;
   CREATE TABLE users_per_team (
     id SERIAL,
-    id_users INTEGER NULL,
-    id_teams INTEGER NULL,
+    id_users INTEGER NOT NULL,
+    id_teams INTEGER NOT NULL,
     PRIMARY KEY (id)
   );
     
