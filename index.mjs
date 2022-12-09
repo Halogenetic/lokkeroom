@@ -72,7 +72,7 @@ app.post('/lobby', (req, res) => {
   })
 })
 
-// app.post('/lobby/:lobby-id', (req, res) => {
+// app.post('/lobby/:id', (req, res) => {
 //   const { email, password, content } = req.body;
 //   client.query(`SELECT * FROM users WHERE email = '${email}'`)
 //   .then ((result) => {
@@ -81,11 +81,11 @@ app.post('/lobby', (req, res) => {
 //           } else {
 //             const validPassword = bcrypt.compareSync(password, result.rows[0].password);
 //             if (validPassword){
-//               client.query(`INSERT INTO messages (id_users, id_lobbies, content) VALUES ($1, $2, $3) RETURNING (id_users, id_lobbies, content)`,
-//               [(JSON.stringify(result.rows[0].id)), req.params['lobby-id'], content], 
+//               client.query(`INSERT INTO messages (id_users, id_lobbies, content) VALUES ($1, $2, $3) RETURNING id_users, id_lobbies, content`,
+//               [(JSON.stringify(result.rows[0].id)), req.params['id'], content], 
 //               (err, resmsg) => {
 //                 if (err) throw err
-//                 res.send(resmsg.rows[0])
+//                 res.send(`User ${JSON.stringify(resmsg.rows[0].id_users)} sent a message in lobby n°${resmsg.rows[0].id_lobbies} with content ${resmsg.rows[0].content}`)
 //               }
 //               )
 //             } else {
@@ -104,20 +104,54 @@ app.post('/lobby/:id', (req, res) => {
           } else {
             const validPassword = bcrypt.compareSync(password, result.rows[0].password);
             if (validPassword){
-              // console.log(req.params['id'])
-              client.query(`INSERT INTO messages (id_users, id_lobbies, content) VALUES ($1, $2, $3) RETURNING (id_users, id_lobbies, content)`,
-              [(JSON.stringify(result.rows[0].id)), req.params['id'], content], 
-              (err, resmsg) => {
-                if (err) throw err
-                res.send(resmsg.rows[0])
-              }
-              )
+              client.query(`SELECT * FROM users_per_lobby WHERE id_users = '${JSON.stringify(result.rows[0].id)}'`)
+              .then ((resultupl) => {
+                  if(JSON.stringify(resultupl.rows[0].id_lobbies) === req.params['id']) {
+                    client.query(`INSERT INTO messages (id_users, id_lobbies, content) VALUES ($1, $2, $3) RETURNING id_users, id_lobbies, content`,
+                    [(JSON.stringify(result.rows[0].id)), req.params['id'], content], 
+                    (err, resmsg) => {
+                      if (err) throw err
+                      res.send(`User ${JSON.stringify(resmsg.rows[0].id_users)} sent a message in lobby n°${JSON.stringify(resmsg.rows[0].id_lobbies)} with content ${resmsg.rows[0].content}`)
+                    }
+                    )
+               } else {
+                res.send(`User ${email} does not have the permission to post messages in lobby n°${JSON.stringify(resultupl.rows[0].id_lobbies)} `)
+               }
+              })
             } else {
               res.send(`The password is not correct`);
             }
           }
   })
 })
+
+app.get('/lobby/:id', (req, res) => {
+  const { email, password, content } = req.body;
+  client.query(`SELECT * FROM users WHERE email = '${email}'`)
+  .then ((result) => {
+          if(result.rows[0] === undefined) {
+            res.send(`User ${email} does not exist`);
+          } else {
+            const validPassword = bcrypt.compareSync(password, result.rows[0].password);
+            if (validPassword){
+              client.query(`SELECT * FROM users_per_lobby WHERE id_users = '${JSON.stringify(result.rows[0].id)}'`)
+              .then ((resultupl) => {
+                  if(JSON.stringify(resultupl.rows[0].id_lobbies) === req.params['id']) {
+                    client.query(`SELECT * from messages WHERE id_lobbies = ${resultupl.rows[0].id_lobbies}`)
+                    .then ((resultgetmsg) => {
+                      res.send(resultgetmsg.rows)
+                    })
+               } else {
+                res.send(`User ${email} does not have the permission to see messages from lobby n°${JSON.stringify(resultupl.rows[0].id_lobbies)} `)
+               }
+              })
+            } else {
+              res.send(`The password is not correct`);
+            }
+          }
+  })
+})
+
   app.listen(3000, () =>{
     console.log("Server running on port 3000")
 })
