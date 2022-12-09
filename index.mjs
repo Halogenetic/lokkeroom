@@ -72,29 +72,6 @@ app.post('/lobby', (req, res) => {
   })
 })
 
-// app.post('/lobby/:id', (req, res) => {
-//   const { email, password, content } = req.body;
-//   client.query(`SELECT * FROM users WHERE email = '${email}'`)
-//   .then ((result) => {
-//           if(result.rows[0] === undefined) {
-//             res.send(`User ${email} does not exist`);
-//           } else {
-//             const validPassword = bcrypt.compareSync(password, result.rows[0].password);
-//             if (validPassword){
-//               client.query(`INSERT INTO messages (id_users, id_lobbies, content) VALUES ($1, $2, $3) RETURNING id_users, id_lobbies, content`,
-//               [(JSON.stringify(result.rows[0].id)), req.params['id'], content], 
-//               (err, resmsg) => {
-//                 if (err) throw err
-//                 res.send(`User ${JSON.stringify(resmsg.rows[0].id_users)} sent a message in lobby n°${resmsg.rows[0].id_lobbies} with content ${resmsg.rows[0].content}`)
-//               }
-//               )
-//             } else {
-//               res.send(`The password is not correct`);
-//             }
-//           }
-//   })
-// })
-
 app.post('/lobby/:id', (req, res) => {
   const { email, password, content } = req.body;
   client.query(`SELECT * FROM users WHERE email = '${email}'`)
@@ -126,7 +103,7 @@ app.post('/lobby/:id', (req, res) => {
 })
 
 app.get('/lobby/:id', (req, res) => {
-  const { email, password, content } = req.body;
+  const { email, password } = req.body;
   client.query(`SELECT * FROM users WHERE email = '${email}'`)
   .then ((result) => {
           if(result.rows[0] === undefined) {
@@ -143,6 +120,39 @@ app.get('/lobby/:id', (req, res) => {
                     })
                } else {
                 res.send(`User ${email} does not have the permission to see messages from lobby n°${JSON.stringify(resultupl.rows[0].id_lobbies)} `)
+               }
+              })
+            } else {
+              res.send(`The password is not correct`);
+            }
+          }
+  })
+})
+
+
+app.put('/lobby/:id/:msg', (req, res) => {
+  const { email, password, content } = req.body;
+  client.query(`SELECT * FROM users WHERE email = '${email}'`)
+  .then ((result) => {
+          if(result.rows[0] === undefined) {
+            res.send(`User ${email} does not exist`);
+          } else {
+            const validPassword = bcrypt.compareSync(password, result.rows[0].password);
+            if (validPassword){
+              client.query(`SELECT * FROM users_per_lobby WHERE id_users = '${JSON.stringify(result.rows[0].id)}'`)
+              .then ((resultupl) => {
+                  if(JSON.stringify(resultupl.rows[0].id_lobbies) === req.params['id']) {
+                    client.query(`SELECT * FROM messages WHERE id = ${req.params['msg']}`)
+                    .then ((resultputmsg) => {
+                      if(resultputmsg.rows[0].id_users === result.rows[0].id) {
+                        client.query(`UPDATE messages SET content = $1 WHERE id = ${req.params['msg']}`, [content])
+                        .then(() => {
+                          res.send(`User ${email} edited message n°${req.params['msg']}, the new content is ${content}`)
+                      })
+                      }
+                    })
+               } else {
+                res.send(`User ${email} does not have the permission to edit messages in lobby n°${JSON.stringify(resultupl.rows[0].id_lobbies)} `)
                }
               })
             } else {
