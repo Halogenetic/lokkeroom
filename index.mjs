@@ -149,10 +149,39 @@ app.put('/lobby/:id/:msg', (req, res) => {
                         .then(() => {
                           res.send(`User ${email} edited message n°${req.params['msg']}, the new content is ${content}`)
                       })
+                      } else {
+                        res.send(`User ${email} does not have the permission to edit this message`)
                       }
                     })
                } else {
                 res.send(`User ${email} does not have the permission to edit messages in lobby n°${JSON.stringify(resultupl.rows[0].id_lobbies)} `)
+               }
+              })
+            } else {
+              res.send(`The password is not correct`);
+            }
+          }
+  })
+})
+
+app.get('/lobby/:id/:msg', (req, res) => {
+  const { email, password } = req.body;
+  client.query(`SELECT * FROM users WHERE email = '${email}'`)
+  .then ((result) => {
+          if(result.rows[0] === undefined) {
+            res.send(`User ${email} does not exist`);
+          } else {
+            const validPassword = bcrypt.compareSync(password, result.rows[0].password);
+            if (validPassword){
+              client.query(`SELECT * FROM users_per_lobby WHERE id_users = '${JSON.stringify(result.rows[0].id)}'`)
+              .then ((resultupl) => {
+                  if(JSON.stringify(resultupl.rows[0].id_lobbies) === req.params['id']) {
+                    client.query(`SELECT * from messages WHERE id = ${req.params['msg']}`)
+                    .then ((resultgetmsg) => {
+                      res.send(resultgetmsg.rows)
+                    })
+               } else {
+                res.send(`User ${email} does not have the permission to see messages from lobby n°${JSON.stringify(resultupl.rows[0].id_lobbies)} `)
                }
               })
             } else {
